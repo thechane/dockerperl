@@ -1,0 +1,5 @@
+FROM alpine:latest
+RUN apk add --update APKEXTRA
+COPY GITFILE /root/GITFILE
+RUN chmod 700 /root/GITFILE
+ENTRYPOINT ["/root/GITFILE"]
