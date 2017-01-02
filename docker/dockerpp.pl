@@ -2,22 +2,18 @@
 
 use strict;
 use warnings;
-
-use Data::Dumper;
-use File::HomeDir;
-use Term::ReadKey;
 use Getopt::Long;
 
-my ($help, $DEBUG, $OPT_outputpath, $OPT_complete, $OPT_modfile, $OPT_modlist, $OPT_giturl, $OPT_gitpath, $OPT_gitfile, $OPT_gitbranch, $OPT_apkextrafile, $OPT_apkextra);
+my ($help, $DEBUG, $OPT_outputpath, $OPT_complete, $OPT_modfile, $OPT_modlist, $OPT_giturl, $OPT_gitpath, $OPT_gitfile, $OPT_gitbranch, $OPT_apkextrafile, $OPT_apkextra, $OPT_image);
 my @perlMods;
 my @apkExtras;
-my $tmpFolder = '/tmp/' . time . '_thechanePerlCompiler';
 
 GetOptions(
 	'help' 				=> \$help,
 	# regular option
-    'DEBUG!'   			=> \$DEBUG,
+    'debug!'   			=> \$DEBUG,
     'outputpath=s'		=> \$OPT_outputpath,
+    'image=s'			=> \$OPT_image,
     'complete!'			=> \$OPT_complete,
     'modfile=s'			=> \$OPT_modfile,
     'modlist=s'			=> \$OPT_modlist,
@@ -28,7 +24,6 @@ GetOptions(
     'apkextra=s'		=> \$OPT_apkextra,
     'apkextrafile=s'	=> \$OPT_apkextrafile
 );
-
 
 if ($help) {
 	my $script = $0;
@@ -48,27 +43,30 @@ $script --help		: This message
 ---------------------------------------------------------
                    $script Help
 ---------------------------------------------------------
-$script --outputpath
-$script --complete
-$script --modfile
-$script --modlist
-$script --giturl
-$script --gitpath
-$script --gitfile
-$script --gitbranch
-$script --apkextrafile
-$script --apkextra
+$script --outputpath		The location of where the dockerfile.dock will go along with the compiled alpine perl script (defaults to /tmp)
+$script --image				What image name to append should --complete be selected
+$script --complete			will also build a basic docker image with the new perl file as the entry point
+$script --modfile			points to a file that has a line by line cpan mods
+$script --modlist			comma separated list of CPAN mods
+$script --giturl			URL of where the git repository can be found
+$script --gitpath			Path to the dir where your perl file is kept on git
+$script --gitfile			Name of the perl file you wish to compile
+$script --gitbranch			git branch (default = master)
+$script --apkextrafile		file showing any alpine packages you require, line by line
+$script --apkextra			commar separated list of alpine packages that might be needed
 
 ---------------------------------------------------------
 		          	Valid  Examples
 ---------------------------------------------------------
 
-
+$script --complete --modlist=Text::Table --gitpath=/docker/test --gitfile=test.pl --image=test --giturl=https://github.com/thechane/perl.git
+docker run thechane/perlcompiler/test
 
 ---------------------------------------------------------
 		          	Notes
 ---------------------------------------------------------
 
+Still need to implement some sanity checks
 
 -----------------------------------------------------------------------
 
@@ -79,10 +77,13 @@ END
 	exit;
 }
 
-die "outputpath, giturl, gitpath and gitfile are required options" unless $OPT_outputpath && $OPT_giturl && $OPT_gitpath && $OPT_gitfile;
+die "giturl, gitpath and gitfile are required options" unless $OPT_giturl && $OPT_gitpath && $OPT_gitfile;
+die "--image is required option when --complete is used" if $OPT_complete && ! $OPT_image;
 ##CHECK DOCKER IS INSTALLED HERE AND MAKE SURE VERSION IS GOOD
 $OPT_gitbranch = 'master' unless $OPT_gitbranch;
-mkdir($tmpFolder) || die "Unable to create tmp folder $tmpFolder : $!";
+$OPT_outputpath = '/tmp' unless $OPT_outputpath;
+$OPT_outputpath = $OPT_outputpath . '/' . time . '_thechanePerlCompiler';
+mkdir($OPT_outputpath) || die "Unable to create tmp folder $OPT_outputpath : $!";
 
 ##format CPAN mod data and any extra APKs
 sub sanityCheckMod {
@@ -121,24 +122,28 @@ if ($OPT_apkextra) {
 }
 my $PERLMODS = join(' ', @perlMods);
 my $PPMODS = join(' -M ', @perlMods);
+$PPMODS = '-M ' . $PPMODS if $PPMODS;
 my $APKEXTRA = join(' ', @apkExtras);
 
 ##create docker files
 open(my $fh, "<", "./perlcompiler.dock") || die "Unable to load dockerfile template : $!";
-open(my $dfh, ">", "$tmpFolder/perlcompiler.dock") || die "Unable to write to $tmpFolder/perlcompiler.dock : $!";
+open(my $dfh, ">", "$OPT_outputpath/perlcompiler.dock") || die "Unable to write to $OPT_outputpath/perlcompiler.dock : $!";
 foreach my $line (<$fh>) {
-	$line =~ s/APKEXTRA/$APKEXTRA/;
-	$line =~ s/PERLMODS/$PERLMODS/;
-	$line =~ s/GITURL/$OPT_giturl/;
-	$line =~ s/GITPATH/$OPT_gitpath/;
-	$line =~ s/GITFILE/$OPT_gitfile/;
-	$line =~ s/PPMODS/$PPMODS/;
+	$line =~ s/APKEXTRA/$APKEXTRA/g;
+	$line =~ s/PERLMODS/$PERLMODS/g;
+	$line =~ s/GITURL/$OPT_giturl/g;
+	$line =~ s/GITPATH/$OPT_gitpath/g;
+	$line =~ s/GITFILE/$OPT_gitfile/g;
+	$line =~ s/GITBRANCH/$OPT_gitbranch/g;
+	$line =~ s/PPMODS/$PPMODS/g;
 	print $dfh $line;
+	print $line if $DEBUG;
 }
 close $fh;
 close $dfh;
+print "\n" if $DEBUG;
 
-##Build and compile compiler
+##Build compiler
 my $FATALERROR;
 my @fatals = ("SOMETHING_REALLY_BAD", "SOMETHINGELSE_REALLY_BAD");
 sub catchError {
@@ -146,7 +151,7 @@ sub catchError {
 	return 1 if grep(/$error/,@fatals);
 	return undef;
 }
-open(my $docker,"docker build --build-arg CACHEBUST=$(date +%s) -t thechane/perlcompiler -f $tmpFolder/perlcompiler.dock $tmpFolder |") || die "Failed to execute docker build : $!\n";
+open(my $docker,"docker build --no-cache -t thechane/perlcompiler:local -f $OPT_outputpath/perlcompiler.dock $OPT_outputpath |") || die "Failed to execute docker build : $!\n";
 while ( <$docker> ) {
 #	if (/(SOMESORTOFERROR|SOMEOTHERSORTOFERROR)/) {
 #		$FATALERROR = catchError($1);
@@ -155,12 +160,11 @@ while ( <$docker> ) {
 	print;
 }
 close $docker;
-rmdir $tmpFolder unless $DEBUG;
 
 ##TEST HERE TO SEE IF BUILD WAS SUCCESSFULL
 
 ##Copy file out of container
-open($docker, "docker run --rm -v $OPT_outputpath:/mntvol thechane/perlcompiler cp /root/$OPT_gitfile /mntvol |") || die "Failed to execute docker build : $!\n";
+open($docker, "docker run --rm -v $OPT_outputpath:/mntvol thechane/perlcompiler:local cp /root/$OPT_gitfile /mntvol |") || die "Failed to execute docker build : $!\n";
 while ( <$docker> ) { print; }
 close $docker;
 
@@ -168,16 +172,17 @@ close $docker;
 open($fh, "<", "./compiled.dock") || die "Unable to load dockerfile template : $!";
 open($dfh, ">", "$OPT_outputpath/dockerfile.dock") || die "Unable to write to $OPT_outputpath/dockerfile.dock : $!";
 foreach my $line (<$fh>) {
-	$line =~ s/APKEXTRA/$APKEXTRA/;
-	$line =~ s/GITFILE/$OPT_gitfile/;
+	$line =~ s/APKEXTRA/$APKEXTRA/g;
+	$line =~ s/GITFILE/$OPT_gitfile/g;
 	print $dfh $line;
+	print $line if $DEBUG;
 }
 close $fh;
 close $dfh;
 
 if ($OPT_complete) {
-	open($docker, "docker build -t thechane/perlcompiled -f $OPT_outputpath/dockerfile.dock |") || die "Failed to execute docker final build : $!\n";
+	print "Building Docker image tagged as $OPT_image\n";
+	open($docker, "docker build --no-cache -t thechane/perlcompiler/$OPT_image -f $OPT_outputpath/dockerfile.dock $OPT_outputpath |") || die "Failed to execute docker final build : $!\n";
 	while ( <$docker> ) { print; }
 	close $docker;
 }
-

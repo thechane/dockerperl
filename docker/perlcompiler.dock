@@ -1,14 +1,10 @@
-FROM thechane:perl
+FROM thechane/perl:latest
 RUN apk add --update git gcc make g++ perl-dev APKEXTRA && rm -rf /var/cache/apk/*
-RUN yes | cpan -i App::cpanminus
-RUN cpanm App::Packer::PAR PERLMODS
-RUN mkdir /root/git
+RUN cpanm App::Packer::PAR PERLMODS && mkdir /root/git
 WORKDIR /root/git
-RUN git init
-RUN git remote add -f origin GITURL
-RUN git config core.sparseCheckout true
-RUN echo "GITPATH" >> /root/git/.git/info/sparse-checkout
-ARG CACHEBUST=1
-RUN git pull origin GITBRANCH && chmod 700 GITPATH/GITFILE
-RUN pp PPMODS -v -o /root/GITFILE GITPATH/GITFILE
-RUN chmod 777 GITPATH/GITFILE
+RUN git init && \
+  git remote add -f origin GITURL && \
+  git config core.sparseCheckout true && \
+  echo "GITPATH" >> /root/git/.git/info/sparse-checkout
+RUN git pull origin GITBRANCH && chmod 754 /root/gitGITPATH/GITFILE
+RUN pp PPMODS -v -o /root/GITFILE /root/gitGITPATH/GITFILE && chmod 754 /root/GITFILE
