@@ -186,3 +186,6 @@ if ($OPT_complete) {
 	while ( <$docker> ) { print; }
 	close $docker;
 }
+
+print "\n\n  ** COMPLETE **\n\n";
+print "Check out the files in $OPT_outputpath\n";
