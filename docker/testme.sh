@@ -1,1 +1,2 @@
-./dockerpp.pl --complete --outputpath=/tmp --modlist=Term::Caca --apkextra=libcaca --gitpath=/test --gitfile=test.pl
+./dockerpp.pl --complete --outputpath=/tmp --modlist=Text::Table --gitpath=/test --gitfile=test.pl
+#./dockerpp.pl --complete --outputpath=/tmp --modlist=Term::Caca --apkextra=libcaca --gitpath=/test --gitfile=test.pl

@@ -3,7 +3,10 @@ MAINTAINER Stuart Chaney <stu@roadtrip2001.net>
 #http://nl.alpinelinux.org/alpine/v3.3/main/x86_64/
 # docker build --rm=true -t thechane/perl -f perl.dock .
 RUN \
-  apk add --update git bash libgcrypt expat-dev openldap-dev libxml2-dev perl perl-dev apkbuild-cpan heimdal-telnet openssh-client gcc make g++ ccache cmake && \
-  yes | cpan -i Env Fatal IO::Socket::IP IO::Socket::SSL XML::Simple Config::General Net::Telnet AnyEvent::RabbitMQ Mojo::JSON Mojo::UserAgent Crypt::Cipher::AES IO::Pty Digest::SHA Net::LDAPS Net::LDAP::Util perlcassa Data::Serializer File::HomeDir Crypt::CBC Crypt::OpenSSL::AES && \
-  apk del gcc make g++ ccache cmake apkbuild-cpan perl-dev && \
+  apk add --update openssl expat-dev openldap-dev libxml2-dev perl perl-dev apkbuild-cpan heimdal-telnet openssh-client gcc make g++ && \
+  yes | cpan -i App::cpanminus && \
+  cpanm inc::latest Data::Serializer Env Fatal IO::Socket::IP IO::Socket::SSL XML::Simple \
+    Config::General Net::Telnet AnyEvent::RabbitMQ Mojo::JSON Mojo::UserAgent Crypt::Cipher::AES \
+    IO::Pty Digest::SHA Net::LDAPS Net::LDAP::Util perlcassa File::HomeDir Crypt::CBC Crypt::OpenSSL::AES && \
+  apk del gcc make g++ perl-dev && \
   rm -Rf /var/cache/apk/* /root/.cpan /tmp/*

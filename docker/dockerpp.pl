@@ -80,7 +80,7 @@ END
 }
 
 die "outputpath, giturl, gitpath and gitfile are required options" unless $OPT_outputpath && $OPT_giturl && $OPT_gitpath && $OPT_gitfile;
-##CHECK DOCKER IS INSTALLED HERE
+##CHECK DOCKER IS INSTALLED HERE AND MAKE SURE VERSION IS GOOD
 $OPT_gitbranch = 'master' unless $OPT_gitbranch;
 mkdir($tmpFolder) || die "Unable to create tmp folder $tmpFolder : $!";
 
@@ -140,9 +140,9 @@ close $dfh;
 
 ##Build and compile compiler
 my $FATALERROR;
+my @fatals = ("SOMETHING_REALLY_BAD", "SOMETHINGELSE_REALLY_BAD");
 sub catchError {
 	my $error = shift;
-	my @fatals = ("SOMETHING_REALLY_BAD", "SOMETHINGELSE_REALLY_BAD");
 	return 1 if grep(/$error/,@fatals);
 	return undef;
 }

@@ -1,6 +1,7 @@
 FROM thechane:perl
-RUN apk add --update git gcc make g++ ccache cmake APKEXTRA && rm -rf /var/cache/apk/*
-RUN yes | cpan -i App::Packer::PAR PERLMODS
+RUN apk add --update git gcc make g++ perl-dev APKEXTRA && rm -rf /var/cache/apk/*
+RUN yes | cpan -i App::cpanminus
+RUN cpanm App::Packer::PAR PERLMODS
 RUN mkdir /root/git
 WORKDIR /root/git
 RUN git init
