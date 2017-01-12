@@ -8,6 +8,6 @@ RUN \
   cpanm Net::Ping Crypt::Blowfish inc::latest Data::Serializer Env Fatal IO::Socket::IP IO::Socket::SSL \
     Config::General Net::Telnet AnyEvent::RabbitMQ Mojo::JSON Mojo::UserAgent Crypt::Cipher::AES XML::Simple \
     IO::Pty Digest::SHA Net::LDAPS Net::LDAP::Util perlcassa File::HomeDir Crypt::CBC Crypt::OpenSSL::AES \
-    Module::ScanDeps Tk PAR App::Packer::PAR && \
+    Module::ScanDeps PAR App::Packer::PAR && \
   apk del gcc make g++ perl-dev && \
   rm -Rf /var/cache/apk/* /root/.cpan /tmp/*
