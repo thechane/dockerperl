@@ -5,8 +5,9 @@ MAINTAINER Stuart Chaney <stu@roadtrip2001.net>
 RUN \
   apk add --update openssl expat-dev openldap-dev libxml2-dev perl perl-dev apkbuild-cpan heimdal-telnet openssh-client gcc make g++ && \
   yes | cpan -i App::cpanminus && \
-  cpanm inc::latest Data::Serializer Env Fatal IO::Socket::IP IO::Socket::SSL XML::Simple Crypt::Blowfish \
-    Config::General Net::Telnet AnyEvent::RabbitMQ Mojo::JSON Mojo::UserAgent Crypt::Cipher::AES Net::Ping \
-    IO::Pty Digest::SHA Net::LDAPS Net::LDAP::Util perlcassa File::HomeDir Crypt::CBC Crypt::OpenSSL::AES && \
+  cpanm Net::Ping Crypt::Blowfish inc::latest Data::Serializer Env Fatal IO::Socket::IP IO::Socket::SSL \
+    Config::General Net::Telnet AnyEvent::RabbitMQ Mojo::JSON Mojo::UserAgent Crypt::Cipher::AES XML::Simple \
+    IO::Pty Digest::SHA Net::LDAPS Net::LDAP::Util perlcassa File::HomeDir Crypt::CBC Crypt::OpenSSL::AES \
+    Module::ScanDeps Tk PAR App::Packer::PAR && \
   apk del gcc make g++ perl-dev && \
   rm -Rf /var/cache/apk/* /root/.cpan /tmp/*

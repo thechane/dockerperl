@@ -1,6 +1,6 @@
 FROM thechane/perl:latest
 RUN apk add --update git gcc make g++ perl-dev APKEXTRA && rm -rf /var/cache/apk/*
-RUN cpanm App::Packer::PAR PERLMODS && mkdir /root/git
+RUN cpanm PERLMODS && mkdir /root/git
 WORKDIR /root/git
 RUN git init && \
   git remote add -f origin GITURL && \
