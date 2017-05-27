@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.5
 RUN \
   apk add --update openssl expat-dev openldap-dev libxml2-dev perl perl-dev apkbuild-cpan heimdal-telnet openssh-client gcc make g++ && \
   yes | cpan -i App::cpanminus && \
